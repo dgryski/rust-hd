@@ -1,6 +1,6 @@
 
-use std;
-import io::{ReaderUtil, WriterUtil};
+extern mod std;
+use io::{ReaderUtil, WriterUtil};
 
 fn format(b: &[u8], offset: uint) {
 
@@ -8,7 +8,7 @@ fn format(b: &[u8], offset: uint) {
     if vec::len(b) == 16 {
         let p : ~[mut u8 * 16] = ~[mut 0 as u8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]/16;
         for b.eachi |i,c| {
-            p[i] = if libc::isprint(c as libc::c_int) != 0 { c as u8 } else { '.' as u8 }
+            p[i] = if libc::isprint(*c as libc::c_int) != 0 { *c as u8 } else { '.' as u8 }
         }
 
         io::println(fmt!(
@@ -34,7 +34,7 @@ fn format(b: &[u8], offset: uint) {
 
     for b.each |c| {
         if offset % 4 == 0 { io::print(" "); }
-        io::print(fmt!("%02x ",c as uint));
+        io::print(fmt!("%02x ",*c as uint));
         offset += 1;
     }
 
@@ -47,7 +47,7 @@ fn format(b: &[u8], offset: uint) {
     io::print(" |");
 
     for b.each |c| {
-        io::print(fmt!("%c",if libc::isprint(c as libc::c_int)!=0{c as char}else{'.'as char}));
+        io::print(fmt!("%c",if libc::isprint(*c as libc::c_int)!=0{*c as char}else{'.'as char}));
     }
 
     io::print("|\n");
@@ -69,14 +69,18 @@ fn hd(fin: io::Reader) {
     }
 }
 
-fn main(args: ~[~str]) {
+
+fn main() {
+
+    let args = os::args();
+
     if vec::len(args) == 1 { hd(io::stdin()); return }
 
     for vec::view(args, 1, vec::len(args)).each |arg| {
-        match io::file_reader(&Path(arg)) {
+        match io::file_reader(&Path(*arg)) {
           result::Ok(f) => { hd(f) }
           result::Err(e) => {
-            let err = fmt!("%s: %s: %s\n",args[0],arg,e);
+            let err = fmt!("%s: %s: %s\n",args[0],*arg,e);
             io::stderr().write_str(err)
           }
         }
