@@ -30,27 +30,35 @@ fn format(b: &[u8], offset: uint) {
 
     let mut offset = offset;
 
-    io::print(fmt!("%08x: ",offset));
+    let mut hd : ~str = ~"";
+
+    let example = ~"00019ae0:  6e 74 31 37  5f 64 31 63  34 36 33 66  63 64 66 63  |nt17_d1c463fcdfc|\n";
+
+    str::reserve(&mut hd, str::len(example));
+
+    hd += fmt!("%08x: ",offset);
 
     for b.each |c| {
-        if offset % 4 == 0 { io::print(" "); }
-        io::print(fmt!("%02x ",*c as uint));
+        if offset % 4 == 0 { hd += " "; }
+        hd += fmt!("%02x ",*c as uint);
         offset += 1;
     }
 
     assert vec::len(b) != 16;
     for uint::range(vec::len(b), 16) |i| {
-        if i != 0 && i % 4 == 0 { io::print(" "); }
-        io::print("   ");
+        if i != 0 && i % 4 == 0 { hd += " "; }
+        hd += "   ";
     }
 
-    io::print(" |");
+    hd += " |";
 
     for b.each |c| {
-        io::print(fmt!("%c",if libc::isprint(*c as libc::c_int)!=0{*c as char}else{'.'as char}));
+        hd += fmt!("%c",if libc::isprint(*c as libc::c_int)!=0{*c as char}else{'.'as char});
     }
 
-    io::print("|\n");
+    hd += "|";
+
+    io::println(hd)
 }
 
 fn hd(fin: io::Reader) {
