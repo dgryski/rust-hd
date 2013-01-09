@@ -6,7 +6,7 @@ fn format(b: &[u8], offset: uint) {
 
     // optimize common case
     if vec::len(b) == 16 {
-        let p : [mut u8 * 16] = [mut 0 as u8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]/16;
+        let p : [mut u8 * 16] = [mut 0 as u8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
         for b.eachi |i,c| {
             p[i] = if libc::isprint(*c as libc::c_int) != 0 { *c as u8 } else { '.' as u8 }
         }
