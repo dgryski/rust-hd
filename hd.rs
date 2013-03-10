@@ -1,14 +1,18 @@
 
 extern mod std;
-use io::{ReaderUtil, WriterUtil};
+use core::io::{ReaderUtil, WriterUtil};
+
+fn isprint(c:u8) -> bool {
+   unsafe { libc::isprint(c as libc::c_int) != 0 }
+}
 
 fn format(b: &[u8], offset: uint) {
 
     // optimize common case
     if vec::len(b) == 16 {
-        let p : [mut u8 * 16] = [mut 0 as u8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+        let mut p : [u8 * 16] = [0 as u8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
         for b.eachi |i,c| {
-            p[i] = if libc::isprint(*c as libc::c_int) != 0 { *c as u8 } else { '.' as u8 }
+            p[i] = if isprint(*c) { *c as u8 } else { '.' as u8 }
         }
 
         io::println(fmt!(
@@ -44,7 +48,7 @@ fn format(b: &[u8], offset: uint) {
         offset += 1;
     }
 
-    assert vec::len(b) != 16;
+    fail_unless!( vec::len(b) != 16 )
     for uint::range(vec::len(b), 16) |i| {
         if i != 0 && i % 4 == 0 { hd += " "; }
         hd += "   ";
@@ -53,7 +57,7 @@ fn format(b: &[u8], offset: uint) {
     hd += " |";
 
     for b.each |c| {
-        hd += fmt!("%c",if libc::isprint(*c as libc::c_int)!=0{*c as char}else{'.'as char});
+        hd += fmt!("%c",if isprint(*c) {*c as char}else{'.'as char});
     }
 
     hd += "|";
@@ -71,12 +75,11 @@ fn hd(fin: io::Reader) {
     while !fin.eof() {
         let n = fin.read(buf, bufsiz);
         if n != 0 {
-            format(vec::view(buf, 0, n), offset);
+            format(vec::slice(buf, 0, n), offset);
         }
         offset += n
     }
 }
-
 
 fn main() {
 
@@ -84,7 +87,7 @@ fn main() {
 
     if vec::len(args) == 1 { hd(io::stdin()); return }
 
-    for vec::view(args, 1, vec::len(args)).each |arg| {
+    for vec::slice(args, 1, vec::len(args)).each |arg| {
         match io::file_reader(&Path(*arg)) {
           result::Ok(f) => { hd(f) }
           result::Err(e) => {
