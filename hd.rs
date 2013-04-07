@@ -1,7 +1,4 @@
 
-extern mod std;
-use core::io::{ReaderUtil, WriterUtil};
-
 fn isprint(c:u8) -> bool {
    unsafe { libc::isprint(c as libc::c_int) != 0 }
 }
@@ -10,7 +7,7 @@ fn format(b: &[u8], offset: uint) {
 
     // optimize common case
     if vec::len(b) == 16 {
-        let mut p : [u8 * 16] = [0 as u8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+        let mut p : [u8, ..16] = [0 as u8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
         for b.eachi |i,c| {
             p[i] = if isprint(*c) { *c as u8 } else { '.' as u8 }
         }
@@ -48,7 +45,8 @@ fn format(b: &[u8], offset: uint) {
         offset += 1;
     }
 
-    fail_unless!( vec::len(b) != 16 )
+    assert!( vec::len(b) != 16 );
+
     for uint::range(vec::len(b), 16) |i| {
         if i != 0 && i % 4 == 0 { hd += " "; }
         hd += "   ";
@@ -65,9 +63,9 @@ fn format(b: &[u8], offset: uint) {
     io::println(hd)
 }
 
-fn hd(fin: io::Reader) {
+fn hd(fin: @io::Reader) {
 
-    const bufsiz: uint = 16u;
+    static bufsiz: uint = 16u;
 
     let mut buf = vec::from_elem(bufsiz, 0u8);
     let mut offset = 0;
