@@ -1,4 +1,11 @@
 
+use std::os;
+use std::io;
+use std::libc;
+use std::vec;
+use std::result;
+
+#[fixed_stack_segment]
 fn isprint(c:u8) -> bool {
    unsafe { libc::isprint(c as libc::c_int) != 0 }
 }
@@ -6,10 +13,10 @@ fn isprint(c:u8) -> bool {
 fn format(b: &[u8], offset: uint) {
 
     // optimize common case
-    if vec::len(b) == 16 {
+    if b.len() == 16 {
         let mut p : [u8, ..16] = [0 as u8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-        for b.eachi |i,c| {
-            p[i] = if isprint(*c) { *c as u8 } else { '.' as u8 }
+        for (i, c) in b.iter().enumerate() {
+            p[i] = if isprint(*c as u8) { *c as u8 } else { '.' as u8 }
         }
 
         io::println(fmt!(
@@ -33,32 +40,31 @@ fn format(b: &[u8], offset: uint) {
 
     let mut hd : ~str = ~"";
 
-    let example = ~"00019ae0:  6e 74 31 37  5f 64 31 63  34 36 33 66  63 64 66 63  |nt17_d1c463fcdfc|\n";
+//    let example = ~"00019ae0:  6e 74 31 37  5f 64 31 63  34 36 33 66  63 64 66 63  |nt17_d1c463fcdfc|\n";
+//    str::reserve(&mut hd, example.len())
 
-    str::reserve(&mut hd, str::len(example));
+    hd.push_str( fmt!("%08x: ",offset) );
 
-    hd += fmt!("%08x: ",offset);
-
-    for b.each |c| {
-        if offset % 4 == 0 { hd += " "; }
-        hd += fmt!("%02x ",*c as uint);
+    for c in b.iter() {
+        if offset % 4 == 0 { hd.push_str( " " ); }
+        hd.push_str( fmt!("%02x ",*c as uint) );
         offset += 1;
     }
 
-    assert!( vec::len(b) != 16 );
+    assert!( b.len() != 16 );
 
-    for uint::range(vec::len(b), 16) |i| {
-        if i != 0 && i % 4 == 0 { hd += " "; }
-        hd += "   ";
+    for i in range(b.len(), 16) {
+        if i != 0 && i % 4 == 0 { hd.push_str(" "); }
+        hd.push_str("   ");
     }
 
-    hd += " |";
+    hd.push_str(" |");
 
-    for b.each |c| {
-        hd += fmt!("%c",if isprint(*c) {*c as char}else{'.'as char});
+    for c in b.iter() {
+        hd.push_str( fmt!("%c",if isprint(*c) {*c as char}else{'.'as char}) );
     }
 
-    hd += "|";
+    hd.push_str("|");
 
     io::println(hd)
 }
@@ -73,7 +79,7 @@ fn hd(fin: @io::Reader) {
     while !fin.eof() {
         let n = fin.read(buf, bufsiz);
         if n != 0 {
-            format(vec::slice(buf, 0, n), offset);
+            format(buf.slice( 0, n), offset);
         }
         offset += n
     }
@@ -83,9 +89,11 @@ fn main() {
 
     let args = os::args();
 
-    if vec::len(args) == 1 { hd(io::stdin()); return }
+    if args.len() == 1 { hd(io::stdin()); return }
 
-    for vec::slice(args, 1, vec::len(args)).each |arg| {
+    let mut it = args.slice(1, args.len()).iter();
+
+    for arg in it {
         match io::file_reader(&Path(*arg)) {
           result::Ok(f) => { hd(f) }
           result::Err(e) => {
