@@ -1,9 +1,13 @@
 
+extern mod extra;
+
 use std::os;
 use std::io;
 use std::libc;
 use std::vec;
 use std::io::File;
+
+use extra::getopts::{optflag,getopts};
 
 fn isprint(c:u8) -> bool {
    unsafe { libc::isprint(c as libc::c_int) != 0 }
@@ -90,18 +94,27 @@ fn main() {
 
     let args = os::args();
 
-    if args.len() == 1 {
+    let program_name = args[0].clone();
+
+    let opts = ~[
+        optflag("p"),
+    ];
+
+    let matches = match getopts(args.tail(), opts) {
+        Ok(m) => { m }
+        Err(f) => { fail!(f.to_err_msg()) }
+    };
+
+    if matches.free.is_empty() {
         hd(&mut io::stdin());
         return
     }
 
-    let mut it = args.slice(1, args.len()).iter();
-
-    for arg in it {
+    for arg in matches.free.iter() {
         match File::open(&Path::new(arg.to_owned())) {
           Some(mut f) => { hd(&mut f) }
           None => {
-            let err = format!("{}: unable to open {}\n",args[0],*arg);
+            let err = format!("{}: unable to open {}\n",program_name, *arg);
             io::stderr().write_str(err)
           }
         }
